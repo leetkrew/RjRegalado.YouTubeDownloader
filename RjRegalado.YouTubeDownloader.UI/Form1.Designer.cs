@@ -48,6 +48,7 @@
             this.label5 = new System.Windows.Forms.Label();
             this.pgbHighRes = new System.Windows.Forms.ProgressBar();
             this.btnAV = new System.Windows.Forms.Button();
+            this.lblLink = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // txtLink
@@ -79,7 +80,7 @@
             this.txtResult.Multiline = true;
             this.txtResult.Name = "txtResult";
             this.txtResult.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.txtResult.Size = new System.Drawing.Size(453, 104);
+            this.txtResult.Size = new System.Drawing.Size(449, 155);
             this.txtResult.TabIndex = 10;
             // 
             // cboAV
@@ -252,11 +253,25 @@
             this.btnAV.UseVisualStyleBackColor = true;
             this.btnAV.Click += new System.EventHandler(this.btnAV_Click);
             // 
+            // lblLink
+            // 
+            this.lblLink.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblLink.AutoSize = true;
+            this.lblLink.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblLink.ForeColor = System.Drawing.Color.Blue;
+            this.lblLink.Location = new System.Drawing.Point(317, 560);
+            this.lblLink.Name = "lblLink";
+            this.lblLink.Size = new System.Drawing.Size(147, 16);
+            this.lblLink.TabIndex = 21;
+            this.lblLink.Text = "www.rjregalado.com";
+            this.lblLink.Click += new System.EventHandler(this.lblLink_Click);
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 511);
+            this.ClientSize = new System.Drawing.Size(484, 585);
+            this.Controls.Add(this.lblLink);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.pgbHighRes);
             this.Controls.Add(this.btnAV);
@@ -309,6 +324,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.ProgressBar pgbHighRes;
         private System.Windows.Forms.Button btnAV;
+        private System.Windows.Forms.Label lblLink;
     }
 }
 

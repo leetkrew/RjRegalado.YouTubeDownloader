@@ -563,8 +563,8 @@ namespace RjRegalado.YouTubeDownloader.UI
             foreach (Control c in Controls)
             {
                 c.Enabled = false;
-
             }
+            lblLink.Enabled = true;
         }
 
         private void btnMp3_Click(object sender, EventArgs e)
@@ -694,6 +694,22 @@ namespace RjRegalado.YouTubeDownloader.UI
 
                 _downloadHighResBg.RunWorkerAsync(new SaveFileArgumentObj() { FileName = saveFileDialog1.FileName });
             }
+        }
+
+        private void lblLink_Click(object sender, EventArgs e)
+        {
+            var process = new Process()
+            {
+                StartInfo =
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = "https://www.rjregalado.com/",
+                        WindowStyle = ProcessWindowStyle.Normal,
+                        CreateNoWindow = true
+                    }
+            };
+
+            process.Start();
         }
     }
 }
