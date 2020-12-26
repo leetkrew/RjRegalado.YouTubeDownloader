@@ -23,6 +23,10 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
+    <SupportUrl>https://www.rjregalado.com/contact</SupportUrl>
+    <ErrorReportUrl>https://www.rjregalado.com/contact</ErrorReportUrl>
+    <ProductName>YouTube Downloader %28by RJ Regalado%29</ProductName>
+    <PublisherName>RJ Regalado</PublisherName>
     <ApplicationRevision>1</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>

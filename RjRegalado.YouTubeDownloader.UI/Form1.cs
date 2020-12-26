@@ -28,202 +28,236 @@ namespace RjRegalado.YouTubeDownloader.UI
 
         private void btnResolve_Click(object sender, EventArgs e)
         {
-            disableControls(Controls);
-            cboAV.Items.Clear();
-            cboAudioOnly.Items.Clear();
-            cboVideoOnly.Items.Clear();
-            txtAvResolution.Text = "";
-            txtResult.Text = "";
-            pgbMuxed.Value = 0;
-            pgbAudio.Value = 0;
-            pgbVideo.Value = 0;
-            pgbHighRes.Value = 0;
+            try
+            {
+                disableControls(Controls);
+                cboAV.Items.Clear();
+                cboAudioOnly.Items.Clear();
+                cboVideoOnly.Items.Clear();
+                txtAvResolution.Text = "";
+                txtResult.Text = "";
+                pgbMuxed.Value = 0;
+                pgbAudio.Value = 0;
+                pgbVideo.Value = 0;
+                pgbHighRes.Value = 0;
 
-            
-            _del(ref txtResult, string.Format("Checking {0}", txtLink.Text), true);
 
-            _resolveBg.RunWorkerAsync();
+                _del(ref txtResult, string.Format("Checking {0}", txtLink.Text), true);
+
+                _resolveBg.RunWorkerAsync();
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            txtLink.Text = "https://www.youtube.com/watch?v=EwRdKJURDHw";
-            disableControls(Controls);
-            txtLink.Enabled = true;
-            btnResolve.Enabled = true;
-
-            _resolveBg.WorkerReportsProgress = true;
-            _downloadIndividualBg.WorkerReportsProgress = true;
-            _downloadHighResBg.WorkerReportsProgress = true;
-
-            _resolveBg.WorkerSupportsCancellation = true;
-            _downloadIndividualBg.WorkerSupportsCancellation = true;
-            _downloadHighResBg.WorkerSupportsCancellation = true;
-
-            _resolveBg.DoWork += (bgs, bgo) =>
+            try
             {
-                
+                txtLink.Text = "https://www.youtube.com/watch?v=EwRdKJURDHw";
+                disableControls(Controls);
+                txtLink.Enabled = true;
+                btnResolve.Enabled = true;
 
-                var ytResult = YouTubeHelper.GetDowloadUrlsAsync(txtLink.Text)
-                .Result;
-                foreach (var item in ytResult)
+                _resolveBg.WorkerReportsProgress = true;
+                _downloadIndividualBg.WorkerReportsProgress = true;
+                _downloadHighResBg.WorkerReportsProgress = true;
+
+                _resolveBg.WorkerSupportsCancellation = true;
+                _downloadIndividualBg.WorkerSupportsCancellation = true;
+                _downloadHighResBg.WorkerSupportsCancellation = true;
+
+                _resolveBg.DoWork += (bgs, bgo) =>
                 {
-                    _resolveBg.ReportProgress(0, item);
-                }
-            };
-
-            _resolveBg.ProgressChanged += (bgs, bge) => {
-
-                var obj = bge.UserState as YouTubeLinksObj;
-
-                _del(ref txtResult, obj.Resolution);
-
-                if (obj.Type.Contains("Muxed"))
-                {
-
-                    cboAV.Items.Add(new YouTubeLinksObj
+                    try
                     {
-                        Resolution = obj.Resolution,
-                        URL = obj.URL,
-                        Title = obj.Title
-                    });
-                    cboAV.SelectedIndex = 0;
-                }
-
-                if (obj.Type.Contains("Audio-only"))
-                {
-
-                    cboAudioOnly.Items.Add(new YouTubeLinksObj
-                    {
-                        Resolution = obj.Resolution,
-                        URL = obj.URL,
-                        Title = obj.Title
-                    });
-                    cboAudioOnly.SelectedIndex = 0;
-                }
-
-                if (obj.Type.Contains("Video-only"))
-                {
-
-                    cboVideoOnly.Items.Add(new YouTubeLinksObj
-                    {
-                        Resolution = obj.Resolution,
-                        URL = obj.URL,
-                        Title = obj.Title
-                    });
-                    cboVideoOnly.SelectedIndex = 0;
-                }
-            };
-
-            _resolveBg.RunWorkerCompleted += (bgs, bge) => {
-                _del(ref txtResult, "Video has been resolved");
-                enableControls(Controls);
-            };
-
-            _downloadIndividualBg.DoWork += (bgs, bge) => {
-                var obj = bge.Argument as SaveFileArgumentObj;
-                WebClient client = new WebClient();
-
-                client.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
-                                                  "Windows NT 5.2; .NET CLR 1.0.3705;)");
-
-                client.DownloadProgressChanged += (bgWCs, bgWCe) => {
-
-                    if (obj.Type == "Muxed")
-                    {
-                        if (_downloadIndividualBg.IsBusy)
+                        var ytResult = YouTubeHelper.GetDowloadUrlsAsync(txtLink.Text)
+                        .Result;
+                        foreach (var item in ytResult)
                         {
-                            _downloadIndividualBg.ReportProgress(0, "Downloading Low Resolution video...");
-                        }
-
-                        if (pgbMuxed.InvokeRequired)
-                        {
-                            pgbMuxed.Invoke(new MethodInvoker(delegate {
-                                pgbMuxed.Value = bgWCe.ProgressPercentage;
-                            }));
+                            _resolveBg.ReportProgress(0, item);
                         }
                     }
-
-                    if (obj.Type == "Audio-only")
+                    catch (Exception ex)
                     {
-                        if (_downloadIndividualBg.IsBusy)
-                        {
-                            _downloadIndividualBg.ReportProgress(0, "Downloading Audio...");
-                        }
-
-                        if (pgbAudio.InvokeRequired)
-                        {
-                            pgbAudio.Invoke(new MethodInvoker(delegate {
-                                pgbAudio.Value = bgWCe.ProgressPercentage;
-                            }));
-                        }
-                    }
-
-                    if (obj.Type == "Video-only")
-                    {
-                        if (_downloadIndividualBg.IsBusy)
-                        {
-                            _downloadIndividualBg.ReportProgress(0, "Downloading High Resolution Video (no audio)...");
-                        }
-
-                        if (pgbVideo.InvokeRequired)
-                        {
-                            pgbVideo.Invoke(new MethodInvoker(delegate {
-                                pgbVideo.Value = bgWCe.ProgressPercentage;
-                            }));
-                        }
+                        throw new Exception("Unable to resolve the link");
                     }
 
                 };
 
-                client.DownloadFileCompleted += (bgs2, bge2) => {
-                    if (obj.Type == "Muxed")
+                _resolveBg.ProgressChanged += (bgs, bge) =>
+                {
+
+                    var obj = bge.UserState as YouTubeLinksObj;
+
+                    _del(ref txtResult, obj.Resolution);
+
+                    if (obj.Type.Contains("Muxed"))
                     {
-                        if (pgbMuxed.InvokeRequired)
+
+                        cboAV.Items.Add(new YouTubeLinksObj
                         {
-                            pgbMuxed.Invoke(new MethodInvoker(delegate
-                            {
-                                pgbMuxed.Value = 100;
-                                enableControls(Controls);
-                            }));
-                        }
+                            Resolution = obj.Resolution,
+                            URL = obj.URL,
+                            Title = obj.Title
+                        });
+                        cboAV.SelectedIndex = 0;
                     }
 
-                    if (obj.Type == "Audio-only")
+                    if (obj.Type.Contains("Audio-only"))
                     {
-                        if (pgbAudio.InvokeRequired)
+
+                        cboAudioOnly.Items.Add(new YouTubeLinksObj
                         {
-                            pgbAudio.Invoke(new MethodInvoker(delegate
-                            {
-                                pgbAudio.Value = 100;
-                                enableControls(Controls);
-                            }));
-                        }
+                            Resolution = obj.Resolution,
+                            URL = obj.URL,
+                            Title = obj.Title
+                        });
+                        cboAudioOnly.SelectedIndex = 0;
                     }
 
-                    if (obj.Type == "Video-only")
+                    if (obj.Type.Contains("Video-only"))
                     {
-                        if (pgbVideo.InvokeRequired)
-                        {
-                            pgbVideo.Invoke(new MethodInvoker(delegate
-                            {
-                                pgbVideo.Value = 100;
-                                enableControls(Controls);
-                            }));
-                        }
-                    }
 
+                        cboVideoOnly.Items.Add(new YouTubeLinksObj
+                        {
+                            Resolution = obj.Resolution,
+                            URL = obj.URL,
+                            Title = obj.Title
+                        });
+                        cboVideoOnly.SelectedIndex = 0;
+                    }
                 };
 
-                client.DownloadFileAsync(new Uri(obj.URL), obj.FileName);
-                while (client.IsBusy)
+                _resolveBg.RunWorkerCompleted += (bgs, bge) =>
                 {
+                    if (bge.Error != null)
+                    {
+                        txtLink.Enabled = true;
+                        btnResolve.Enabled = true;
+                        _del(ref txtResult, string.Format("Error: {0}", bge.Error.Message));
+                    } else
+                    {
+                        _del(ref txtResult, "Video has been resolved");
+                        enableControls(Controls);
+                    }
                     
-                }
+                };
 
-                var process = new Process()
+                _downloadIndividualBg.DoWork += (bgs, bge) =>
                 {
-                    StartInfo =
+                    try
+                    {
+                        var obj = bge.Argument as SaveFileArgumentObj;
+                        WebClient client = new WebClient();
+
+                        client.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
+                                                          "Windows NT 5.2; .NET CLR 1.0.3705;)");
+
+                        client.DownloadProgressChanged += (bgWCs, bgWCe) =>
+                        {
+
+                            if (obj.Type == "Muxed")
+                            {
+                                if (_downloadIndividualBg.IsBusy)
+                                {
+                                    _downloadIndividualBg.ReportProgress(0, "Downloading Low Resolution video...");
+                                }
+
+                                if (pgbMuxed.InvokeRequired)
+                                {
+                                    pgbMuxed.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbMuxed.Value = bgWCe.ProgressPercentage;
+                                    }));
+                                }
+                            }
+
+                            if (obj.Type == "Audio-only")
+                            {
+                                if (_downloadIndividualBg.IsBusy)
+                                {
+                                    _downloadIndividualBg.ReportProgress(0, "Downloading Audio...");
+                                }
+
+                                if (pgbAudio.InvokeRequired)
+                                {
+                                    pgbAudio.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbAudio.Value = bgWCe.ProgressPercentage;
+                                    }));
+                                }
+                            }
+
+                            if (obj.Type == "Video-only")
+                            {
+                                if (_downloadIndividualBg.IsBusy)
+                                {
+                                    _downloadIndividualBg.ReportProgress(0, "Downloading High Resolution Video (no audio)...");
+                                }
+
+                                if (pgbVideo.InvokeRequired)
+                                {
+                                    pgbVideo.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbVideo.Value = bgWCe.ProgressPercentage;
+                                    }));
+                                }
+                            }
+
+                        };
+
+                        client.DownloadFileCompleted += (bgs2, bge2) =>
+                        {
+                            if (obj.Type == "Muxed")
+                            {
+                                if (pgbMuxed.InvokeRequired)
+                                {
+                                    pgbMuxed.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbMuxed.Value = 100;
+                                        enableControls(Controls);
+                                    }));
+                                }
+                            }
+
+                            if (obj.Type == "Audio-only")
+                            {
+                                if (pgbAudio.InvokeRequired)
+                                {
+                                    pgbAudio.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbAudio.Value = 100;
+                                        enableControls(Controls);
+                                    }));
+                                }
+                            }
+
+                            if (obj.Type == "Video-only")
+                            {
+                                if (pgbVideo.InvokeRequired)
+                                {
+                                    pgbVideo.Invoke(new MethodInvoker(delegate
+                                    {
+                                        pgbVideo.Value = 100;
+                                        enableControls(Controls);
+                                    }));
+                                }
+                            }
+
+                        };
+
+                        client.DownloadFileAsync(new Uri(obj.URL), obj.FileName);
+                        while (client.IsBusy)
+                        {
+
+                        }
+
+                        var process = new Process()
+                        {
+                            StartInfo =
                     {
                         FileName = "explorer.exe",
                         Arguments = Path.GetDirectoryName(obj.FileName),
@@ -231,148 +265,186 @@ namespace RjRegalado.YouTubeDownloader.UI
                         CreateNoWindow = true,
 
                     }
+                        };
+
+                        process.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.Message);
+                    }
                 };
 
-                process.Start();
-            };
-
-            _downloadIndividualBg.ProgressChanged += (bgs1, bge1) => {
-                //pgbMuxed.Value = bge1.ProgressPercentage;
-                _del(ref txtResult, bge1.UserState.ToString());
-            };
-
-            _downloadIndividualBg.RunWorkerCompleted += (bgs2, bge2) => {
-
-            };
-
-            _downloadHighResBg.DoWork += (bgs, bge) =>  {
-
-                var audioInfo = new YouTubeLinksObj();
-                var videoInfo = new YouTubeLinksObj();
-                var obj = bge.Argument as SaveFileArgumentObj;
-
-                if (cboAudioOnly.InvokeRequired)
+                _downloadIndividualBg.ProgressChanged += (bgs1, bge1) =>
                 {
-                    cboAudioOnly.Invoke(new MethodInvoker(delegate
-                    {
-                        audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
-                    }));
-                }
-
-                if (cboVideoOnly.InvokeRequired)
-                {
-                    cboVideoOnly.Invoke(new MethodInvoker(delegate
-                    {
-                        videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
-                    }));
-                }
-
-                _downloadHighResBg.ReportProgress(0, "Downloading High Resolution Video");
-
-                WebClient clientAudio = new WebClient();
-                WebClient clientVideo = new WebClient();
-
-                clientAudio.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
-                                                  "Windows NT 5.2; .NET CLR 1.0.3705;)");
-                clientVideo.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
-                                                  "Windows NT 5.2; .NET CLR 1.0.3705;)");
-
-                clientAudio.DownloadProgressChanged += (bgWCs, bgWCe) => {
-                    if (pgbAudio.InvokeRequired)
-                    {
-                        pgbAudio.Invoke(new MethodInvoker(delegate {
-                            pgbAudio.Value = bgWCe.ProgressPercentage;
-                        }));
-                    }
-                };
-
-                clientVideo.DownloadProgressChanged += (bgWCs, bgWCe) => {
-                    if (pgbVideo.InvokeRequired)
-                    {
-                        pgbVideo.Invoke(new MethodInvoker(delegate {
-                            pgbVideo.Value = bgWCe.ProgressPercentage;
-                        }));
-                    }
-                };
-
-                clientAudio.DownloadFileCompleted += (bgs2, bge2) => {
-                    if (pgbAudio.InvokeRequired)
-                    {
-                        pgbAudio.Invoke(new MethodInvoker(delegate
-                        {
-                            pgbAudio.Value = 100;
-                        }));
-                    }
-                };
-
-                clientVideo.DownloadFileCompleted += (bgs2, bge2) => {
-                    if (pgbVideo.InvokeRequired)
-                    {
-                        pgbVideo.Invoke(new MethodInvoker(delegate
-                        {
-                            pgbVideo.Value = 100;
-                        }));
-                    }
-                };
-
-                clientAudio.DownloadFileAsync(new Uri(audioInfo.URL), string.Format("{0}.audio-file-tmp", obj.FileName));
-                clientVideo.DownloadFileAsync(new Uri(videoInfo.URL), string.Format("{0}.video-file-tmp", obj.FileName));
-
-                
-
-                while (clientAudio.IsBusy || clientVideo.IsBusy)
-                {
-                    var audioPercentage = 0;
-                    var videoPercentage = 0;
-
-                    if (pgbAudio.InvokeRequired)
-                    {
-                        pgbAudio.Invoke(new MethodInvoker(delegate {
-                            audioPercentage = int.Parse(pgbAudio.Value.ToString());
-                        }));
-                    }
-
-                    if (pgbVideo.InvokeRequired)
-                    {
-                        pgbVideo.Invoke(new MethodInvoker(delegate {
-                            videoPercentage = int.Parse(pgbVideo.Value.ToString());
-                        }));
-                    }
-
-                    _downloadHighResBg.ReportProgress(
-                        Convert.ToInt32((audioPercentage *0.25) + (videoPercentage * 0.25))
-                    );
-                }
-
-                ConvertFileAsync(_mergeFileParam);
-            };
-
-            _downloadHighResBg.ProgressChanged += (bgs1, bge1) => {
-
-                if (bge1.UserState != null)
-                {
+                    //pgbMuxed.Value = bge1.ProgressPercentage;
                     _del(ref txtResult, bge1.UserState.ToString());
-                }
+                };
 
-                if (pgbHighRes.InvokeRequired)
+                _downloadIndividualBg.RunWorkerCompleted += (bgs2, bge2) =>
                 {
-                    pgbHighRes.Invoke(new MethodInvoker(delegate
+                    if (bge2.Error != null)
+                    {
+                        _del(ref txtResult, string.Format("Error: {0}", bge2.Error.Message));
+                    }
+                };
+
+                _downloadHighResBg.DoWork += (bgs, bge) =>
+                {
+                    try
+                    {
+                        var audioInfo = new YouTubeLinksObj();
+                        var videoInfo = new YouTubeLinksObj();
+                        var obj = bge.Argument as SaveFileArgumentObj;
+
+                        if (cboAudioOnly.InvokeRequired)
+                        {
+                            cboAudioOnly.Invoke(new MethodInvoker(delegate
+                            {
+                                audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
+                            }));
+                        }
+
+                        if (cboVideoOnly.InvokeRequired)
+                        {
+                            cboVideoOnly.Invoke(new MethodInvoker(delegate
+                            {
+                                videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
+                            }));
+                        }
+
+                        _downloadHighResBg.ReportProgress(0, "Downloading High Resolution Video");
+
+                        WebClient clientAudio = new WebClient();
+                        WebClient clientVideo = new WebClient();
+
+                        clientAudio.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
+                                                          "Windows NT 5.2; .NET CLR 1.0.3705;)");
+                        clientVideo.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; " +
+                                                          "Windows NT 5.2; .NET CLR 1.0.3705;)");
+
+                        clientAudio.DownloadProgressChanged += (bgWCs, bgWCe) =>
+                        {
+                            if (pgbAudio.InvokeRequired)
+                            {
+                                pgbAudio.Invoke(new MethodInvoker(delegate
+                                {
+                                    pgbAudio.Value = bgWCe.ProgressPercentage;
+                                }));
+                            }
+                        };
+
+                        clientVideo.DownloadProgressChanged += (bgWCs, bgWCe) =>
+                        {
+                            if (pgbVideo.InvokeRequired)
+                            {
+                                pgbVideo.Invoke(new MethodInvoker(delegate
+                                {
+                                    pgbVideo.Value = bgWCe.ProgressPercentage;
+                                }));
+                            }
+                        };
+
+                        clientAudio.DownloadFileCompleted += (bgs2, bge2) =>
+                        {
+                            if (pgbAudio.InvokeRequired)
+                            {
+                                pgbAudio.Invoke(new MethodInvoker(delegate
+                                {
+                                    pgbAudio.Value = 100;
+                                }));
+                            }
+                        };
+
+                        clientVideo.DownloadFileCompleted += (bgs2, bge2) =>
+                        {
+                            if (pgbVideo.InvokeRequired)
+                            {
+                                pgbVideo.Invoke(new MethodInvoker(delegate
+                                {
+                                    pgbVideo.Value = 100;
+                                }));
+                            }
+                        };
+
+                        clientAudio.DownloadFileAsync(new Uri(audioInfo.URL), string.Format("{0}.audio-file-tmp", obj.FileName));
+                        clientVideo.DownloadFileAsync(new Uri(videoInfo.URL), string.Format("{0}.video-file-tmp", obj.FileName));
+
+
+
+                        while (clientAudio.IsBusy || clientVideo.IsBusy)
+                        {
+                            var audioPercentage = 0;
+                            var videoPercentage = 0;
+
+                            if (pgbAudio.InvokeRequired)
+                            {
+                                pgbAudio.Invoke(new MethodInvoker(delegate
+                                {
+                                    audioPercentage = int.Parse(pgbAudio.Value.ToString());
+                                }));
+                            }
+
+                            if (pgbVideo.InvokeRequired)
+                            {
+                                pgbVideo.Invoke(new MethodInvoker(delegate
+                                {
+                                    videoPercentage = int.Parse(pgbVideo.Value.ToString());
+                                }));
+                            }
+
+                            _downloadHighResBg.ReportProgress(
+                                Convert.ToInt32((audioPercentage * 0.25) + (videoPercentage * 0.25))
+                            );
+                        }
+
+                        ConvertFileAsync(_mergeFileParam);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception(ex.Message);
+                    }
+                };
+
+                _downloadHighResBg.ProgressChanged += (bgs1, bge1) =>
+                {
+
+                    if (bge1.UserState != null)
+                    {
+                        _del(ref txtResult, bge1.UserState.ToString());
+                    }
+
+                    if (pgbHighRes.InvokeRequired)
+                    {
+                        pgbHighRes.Invoke(new MethodInvoker(delegate
+                        {
+                            pgbHighRes.Value = bge1.ProgressPercentage;
+                        }));
+                    }
+                    else
                     {
                         pgbHighRes.Value = bge1.ProgressPercentage;
-                    }));
-                }
-                else
-                {
-                    pgbHighRes.Value = bge1.ProgressPercentage;
-                }
-            };
+                    }
+                };
 
-            _downloadHighResBg.RunWorkerCompleted +=  (bgs2, bge2) => {
-                pgbMuxed.Value = 0;
-                pgbAudio.Value = 0;
-                pgbHighRes.Value = 0;
-                enableControls(Controls);
-            };
+                _downloadHighResBg.RunWorkerCompleted += (bgs2, bge2) =>
+                {
+                    if (bge2.Error != null)
+                    {
+                        _del(ref txtResult, string.Format("Error: {0}", bge2.Error.Message));
+                    }
+
+                    pgbMuxed.Value = 0;
+                    pgbAudio.Value = 0;
+                    pgbHighRes.Value = 0;
+                    enableControls(Controls);
+                };
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
+
+            }
         }
         
         public void ConvertFileAsync(MergeAurgumentObj param)
@@ -516,27 +588,34 @@ namespace RjRegalado.YouTubeDownloader.UI
 
         private void btnDownload_Click(object sender, EventArgs e)
         {
-            var ytInfo = (cboAV.SelectedItem as YouTubeLinksObj);
-            var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                .Last()
-                .Trim()
-                .Replace(")", "");
-
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-            saveFileDialog1.Filter = string.Format("{0} File |*.{0}", extName);
-            saveFileDialog1.Title = "Save a Video File";
-            saveFileDialog1.ShowDialog();
-
-            if (saveFileDialog1.FileName != "")
+            try
             {
-                disableControls(Controls);
+                var ytInfo = (cboAV.SelectedItem as YouTubeLinksObj);
+                var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Last()
+                    .Trim()
+                    .Replace(")", "");
 
-                _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                saveFileDialog1.Filter = string.Format("{0} File |*.{0}", extName);
+                saveFileDialog1.Title = "Save a Video File";
+                saveFileDialog1.ShowDialog();
+
+                if (saveFileDialog1.FileName != "")
                 {
-                    FileName = saveFileDialog1.FileName,
-                    URL = ytInfo.URL,
-                    Type = "Muxed"
-                });
+                    disableControls(Controls);
+
+                    _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                    {
+                        FileName = saveFileDialog1.FileName,
+                        URL = ytInfo.URL,
+                        Type = "Muxed"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
         }
 
@@ -569,147 +648,198 @@ namespace RjRegalado.YouTubeDownloader.UI
 
         private void btnMp3_Click(object sender, EventArgs e)
         {
-            var ytInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
-            var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                .Last()
-                .Trim()
-                .Replace(")", "");
-
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-            saveFileDialog1.Filter = string.Format("{0} File |*.{0}", extName);
-            saveFileDialog1.Title = "Save an Audio File";
-            saveFileDialog1.ShowDialog();
-
-            if (saveFileDialog1.FileName != "")
+            try
             {
-                disableControls(Controls);
+                var ytInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
+                var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Last()
+                    .Trim()
+                    .Replace(")", "");
 
-                _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                saveFileDialog1.Filter = string.Format("{0} File |*.{0}|AAC Audio File|*.aac", extName);
+                saveFileDialog1.Title = "Save an Audio File";
+                saveFileDialog1.ShowDialog();
+
+                if (saveFileDialog1.FileName != "")
                 {
-                    FileName = saveFileDialog1.FileName,
-                    URL = ytInfo.URL,
-                    Type = "Audio-only"
-                });
+                    if (Path.GetExtension(saveFileDialog1.FileName).ToLower() == "aac")
+                    {
+                        throw new Exception("Not Yet Implemented");
+                    }
+
+                    disableControls(Controls);
+                    _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                    {
+                        FileName = saveFileDialog1.FileName,
+                        URL = ytInfo.URL,
+                        Type = "Audio-only"
+                    });
+
+                    //while (_downloadIndividualBg.IsBusy)
+                    //{
+                    //    //wait
+                    //}
+                }
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
         }
 
         private void btnVideo_Click(object sender, EventArgs e)
         {
-            var ytInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
-            var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                .Last()
-                .Trim()
-                .Replace(")", "");
-
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-            saveFileDialog1.Filter = string.Format("{0} File |*.{0}", extName);
-            saveFileDialog1.Title = "Save a Video File";
-            saveFileDialog1.ShowDialog();
-
-            if (saveFileDialog1.FileName != "")
+            try
             {
-                disableControls(Controls);
+                var ytInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
+                var extName = ytInfo.Resolution.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Last()
+                    .Trim()
+                    .Replace(")", "");
 
-                _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                saveFileDialog1.Filter = string.Format("{0} File |*.{0}", extName);
+                saveFileDialog1.Title = "Save a Video File";
+                saveFileDialog1.ShowDialog();
+
+                if (saveFileDialog1.FileName != "")
                 {
-                    FileName = saveFileDialog1.FileName,
-                    URL = ytInfo.URL,
-                    Type = "Video-only"
-                });
+                    disableControls(Controls);
+
+                    _downloadIndividualBg.RunWorkerAsync(new SaveFileArgumentObj()
+                    {
+                        FileName = saveFileDialog1.FileName,
+                        URL = ytInfo.URL,
+                        Type = "Video-only"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
         }
 
         private void cboAudioOnly_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
-            var videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
-
-            var audioText = "";
-            var videoText = "";
-
-            if (audioInfo != null)
+            try
             {
-                audioText = audioInfo.Resolution
-                    .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                    .First()
-                    .Replace("Audio-only", "")
-                    .Trim();
-            }
+                var audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
+                var videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
 
-            if (videoInfo != null)
+                var audioText = "";
+                var videoText = "";
+
+                if (audioInfo != null)
+                {
+                    audioText = audioInfo.Resolution
+                        .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                        .First()
+                        .Replace("Audio-only", "")
+                        .Trim();
+                }
+
+                if (videoInfo != null)
+                {
+                    videoText = videoInfo.Resolution
+                        .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)[1]
+                        .Trim();
+                }
+
+                txtAvResolution.Text = string.Format("{0} @ {1}", audioText, videoText);
+            }
+            catch (Exception ex)
             {
-                videoText = videoInfo.Resolution
-                    .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)[1]
-                    .Trim();
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
-
-            txtAvResolution.Text = string.Format("{0} @ {1}", audioText, videoText);
 
         }
 
         private void cboVideoOnly_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
-            var videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
-
-            var audioText = "";
-            var videoText = "";
-
-            if (audioInfo != null)
+            try
             {
-                audioText = audioInfo.Resolution
-                    .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                    .First()
-                    .Replace("Audio-only", "")
-                    .Trim();
-            }
+                var audioInfo = (cboAudioOnly.SelectedItem as YouTubeLinksObj);
+                var videoInfo = (cboVideoOnly.SelectedItem as YouTubeLinksObj);
 
-            if (videoInfo != null)
+                var audioText = "";
+                var videoText = "";
+
+                if (audioInfo != null)
+                {
+                    audioText = audioInfo.Resolution
+                        .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                        .First()
+                        .Replace("Audio-only", "")
+                        .Trim();
+                }
+
+                if (videoInfo != null)
+                {
+                    videoText = videoInfo.Resolution
+                        .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)[1]
+                        .Trim();
+                }
+
+                txtAvResolution.Text = string.Format("{0} @ {1}", audioText, videoText);
+            }
+            catch (Exception ex)
             {
-                videoText = videoInfo.Resolution
-                    .Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries)[1]
-                    .Trim();
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
-
-            txtAvResolution.Text = string.Format("{0} @ {1}", audioText, videoText);
         }
 
         private void btnAV_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
-            saveFileDialog1.Filter = "mp4 File |*.mp4";
-            saveFileDialog1.Title = "Save High Resolution Video";
-            saveFileDialog1.ShowDialog();
-
-            if (saveFileDialog1.FileName != "")
+            try
             {
-                disableControls(Controls);
+                SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+                saveFileDialog1.Filter = "mp4 File |*.mp4";
+                saveFileDialog1.Title = "Save High Resolution Video";
+                saveFileDialog1.ShowDialog();
 
-                _mergeFileParam = new MergeAurgumentObj()
+                if (saveFileDialog1.FileName != "")
                 {
-                    AudioFile = string.Format("{0}.audio-file-tmp", saveFileDialog1.FileName),
-                    VideoFile = string.Format("{0}.video-file-tmp", saveFileDialog1.FileName),
-                    Filename= saveFileDialog1.FileName
-                };
+                    disableControls(Controls);
 
-                _downloadHighResBg.RunWorkerAsync(new SaveFileArgumentObj() { FileName = saveFileDialog1.FileName });
+                    _mergeFileParam = new MergeAurgumentObj()
+                    {
+                        AudioFile = string.Format("{0}.audio-file-tmp", saveFileDialog1.FileName),
+                        VideoFile = string.Format("{0}.video-file-tmp", saveFileDialog1.FileName),
+                        Filename = saveFileDialog1.FileName
+                    };
+
+                    _downloadHighResBg.RunWorkerAsync(new SaveFileArgumentObj() { FileName = saveFileDialog1.FileName });
+                }
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
             }
         }
 
         private void lblLink_Click(object sender, EventArgs e)
         {
-            var process = new Process()
+            try
             {
-                StartInfo =
+                var process = new Process()
+                {
+                    StartInfo =
                     {
                         FileName = "explorer.exe",
                         Arguments = "https://www.rjregalado.com/",
                         WindowStyle = ProcessWindowStyle.Normal,
                         CreateNoWindow = true
                     }
-            };
+                };
 
-            process.Start();
+                process.Start();
+            }
+            catch (Exception ex)
+            {
+                _del(ref txtResult, string.Format("Error: {0}", ex.Message));
+            }
         }
     }
 }
